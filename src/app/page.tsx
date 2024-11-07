@@ -9,7 +9,7 @@ import { FileUploadButton } from '../components/FileUploadButton'
 import { VideoRecorder } from '../components/VideoRecorder'
 import { VideoUploadAndRecorder } from '@/components/Videoplayer'
 import AuthButton from '@/components/AuthButton'
-import AppSidebar from '@/components/ui/AppSidebar'
+import VideoPlayback from '@/components/VideoPlayback'
 
 export default async function Index() {
   const cookieStore = cookies()
@@ -44,6 +44,8 @@ export default async function Index() {
           <VideoUploadAndRecorder />
         </div>
       </div>
+
+      <VideoPlayback />
 
       <footer className="w-full justify-center border-t border-t-foreground/10 p-8 text-center text-xs">
         <p className="mb-6">

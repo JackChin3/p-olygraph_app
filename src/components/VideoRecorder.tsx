@@ -1,6 +1,7 @@
 'use client'
 import { useRef, useEffect } from 'react'
 import { Button } from './ui/button'
+import { createBrowserClient } from '@/utils/supabase'
 
 export const VideoRecorder = ({
   setVideoURL,
@@ -16,8 +17,8 @@ export const VideoRecorder = ({
   const mediaRecorder = useRef<MediaRecorder | null>(null)
   const recordedChunks = useRef<Blob[]>([])
   const streamRef = useRef<MediaStream | null>(null)
+  const supabase = createBrowserClient()
 
-  // Cleanup when component unmounts
   useEffect(() => {
     return () => {
       if (streamRef.current) {
@@ -28,27 +29,20 @@ export const VideoRecorder = ({
 
   const startRecording = async () => {
     try {
-      // Stop any existing stream
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop())
       }
 
-      // Get new media stream
       const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: true,
       })
       streamRef.current = stream
 
-      // Set the video element's srcObject for live preview
       if (videoRef.current) {
         videoRef.current.srcObject = stream
-        await videoRef.current
-          .play()
-          .catch((e) => console.log('Play error:', e))
       }
 
-      // Initialize MediaRecorder with the stream
       mediaRecorder.current = new MediaRecorder(stream)
       recordedChunks.current = []
 
@@ -58,27 +52,47 @@ export const VideoRecorder = ({
         }
       }
 
-      mediaRecorder.current.onstop = () => {
+      mediaRecorder.current.onstop = async () => {
         const blob = new Blob(recordedChunks.current, { type: 'video/mp4' })
-        const url = URL.createObjectURL(blob)
-        setVideoURL(url)
+        const localUrl = URL.createObjectURL(blob)
 
-        // Clear the live preview
-        if (videoRef.current) {
-          videoRef.current.srcObject = null
-        }
+        // Set local URL immediately for preview
+        setVideoURL(localUrl)
 
-        // Stop all tracks
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach((track) => track.stop())
-          streamRef.current = null
+        try {
+          // Upload to Supabase
+          const {
+            data: { user },
+            error: userError,
+          } = await supabase.auth.getUser()
+          if (userError || !user) throw new Error('User not found')
+
+          const filename = `${user.id}_${Date.now()}.mp4`
+          const { error } = await supabase.storage
+            .from('videos')
+            .upload(filename, blob, {
+              contentType: 'video/mp4',
+              cacheControl: '3600',
+            })
+
+          if (error) throw error
+
+          const {
+            data: { publicUrl },
+          } = supabase.storage.from('videos').getPublicUrl(filename)
+
+          // Only update URL if upload succeeded
+          setVideoURL(publicUrl)
+        } catch (error) {
+          console.error('Error uploading to Supabase:', error)
+          // Keep using local URL if upload failed
         }
       }
 
       mediaRecorder.current.start()
       setIsRecording(true)
     } catch (error) {
-      console.error('Error accessing media devices:', error)
+      console.error('Error starting recording:', error)
     }
   }
 
@@ -86,18 +100,24 @@ export const VideoRecorder = ({
     if (mediaRecorder.current && mediaRecorder.current.state !== 'inactive') {
       mediaRecorder.current.stop()
       setIsRecording(false)
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = null
+      }
+
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop())
+      }
     }
   }
 
   return (
-    <div>
-      <Button
-        onClick={isRecording ? stopRecording : startRecording}
-        variant={isRecording ? 'destructive' : 'default'}
-        className="btn-record"
-      >
-        {isRecording ? 'Stop Recording' : 'Record Video'}
-      </Button>
-    </div>
+    <Button
+      onClick={isRecording ? stopRecording : startRecording}
+      variant={isRecording ? 'destructive' : 'default'}
+      className="btn-record"
+    >
+      {isRecording ? 'Stop Recording' : 'Record Video'}
+    </Button>
   )
 }

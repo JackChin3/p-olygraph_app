@@ -1,22 +1,59 @@
 'use client'
-import { Button } from './ui/button' // Assuming Button is in the ui folder
-import { useState } from 'react'
+import { useRef } from 'react'
+import { Button } from './ui/button'
+import { createBrowserClient } from '@/utils/supabase'
 
 export const FileUploadButton = ({
   setVideoURL,
 }: {
   setVideoURL: (url: string) => void
 }) => {
-  const handleVideoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      const url = URL.createObjectURL(file)
-      setVideoURL(url)
-    }
-  }
+  const inputRef = useRef<HTMLInputElement>(null)
+  const supabase = createBrowserClient()
 
-  const triggerFileInput = () => {
-    document.getElementById('video-upload')?.click()
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    // Create local URL for immediate preview
+    const localUrl = URL.createObjectURL(file)
+    setVideoURL(localUrl)
+
+    try {
+      // Upload to Supabase
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser()
+      if (userError || !user) throw new Error('User not found')
+
+      const filename = `${user.id}_${Date.now()}.mp4`
+      const { error } = await supabase.storage
+        .from('videos')
+        .upload(filename, file, {
+          contentType: 'video/mp4',
+          cacheControl: '3600',
+        })
+
+      if (error) throw error
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('videos').getPublicUrl(filename)
+
+      // Only update URL if upload succeeded
+      setVideoURL(publicUrl)
+    } catch (error) {
+      console.error('Error uploading to Supabase:', error)
+      // Keep using local URL if upload failed
+    }
+
+    // Reset input
+    if (inputRef.current) {
+      inputRef.current.value = ''
+    }
   }
 
   return (
@@ -24,56 +61,17 @@ export const FileUploadButton = ({
       <input
         type="file"
         accept="video/*"
-        onChange={handleVideoUpload}
-        className="hidden"
-        id="video-upload"
+        onChange={handleFileChange}
+        ref={inputRef}
+        style={{ display: 'none' }}
       />
-      <Button onClick={triggerFileInput} variant="default" size="default">
+      <Button
+        onClick={() => inputRef.current?.click()}
+        variant="outline"
+        className="btn-upload"
+      >
         Upload Video
       </Button>
     </div>
   )
 }
-
-// "use client";
-// import { useState } from "react";
-// import { Button } from "./ui/button"; // Assuming Button is in the ui folder
-
-// export const FileUploadButton = () => {
-//   const [videoURL, setVideoURL] = useState<string | null>(null);
-
-//   // File input handler
-//   const handleVideoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-//     const file = event.target.files?.[0];
-//     if (file) {
-//       const url = URL.createObjectURL(file);
-//       setVideoURL(url);
-//     }
-//   };
-
-//   // Simulate click on hidden file input
-//   const triggerFileInput = () => {
-//     document.getElementById("video-upload")?.click();
-//   };
-
-//   return (
-//     <div>
-//       {/* Hidden file input */}
-//       <input
-//         type="file"
-//         accept="video/*"
-//         onChange={handleVideoUpload}
-//         className="hidden"
-//         id="video-upload"
-//       />
-
-//       {/* Button styled to trigger file upload */}
-//       <Button onClick={triggerFileInput} variant="default" size="default">
-//         Upload Video
-//       </Button>
-
-//       {/* Display video if a file has been uploaded */}
-//       {videoURL && <video src={videoURL} controls className="w-full mt-4" />}
-//     </div>
-//   );
-// };
