@@ -2,11 +2,14 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { createBrowserClient } from '../../utils/supabase' // Import the shared client
+import ThumbnailVideoDisplay from '@/components/ThumbnailVideoDisplay'
 
 const supabase = createBrowserClient() // Use the shared browser client instance
 
 export default function ThumbnailsPage() {
-  const [videoUrls, setVideoUrls] = useState<string[]>([])
+  const [videos, setVideos] = useState<
+    { filename: string; publicUrl: string }[]
+  >([])
   const [isLoading, setIsLoading] = useState(true) // State to track loading
 
   useEffect(() => {
@@ -35,15 +38,18 @@ export default function ThumbnailsPage() {
         console.error('Error fetching videos:', error)
       } else {
         const userVideos = data.filter((file) => file.name.includes(user.id))
-        const urls = await Promise.all(
+        const videoData = await Promise.all(
           userVideos.map(async (file) => {
             const { data: publicUrlData } = supabase.storage
               .from('videos')
               .getPublicUrl(file.name)
-            return publicUrlData?.publicUrl || ''
+            return {
+              filename: file.name,
+              publicUrl: publicUrlData?.publicUrl || '',
+            }
           }),
         )
-        setVideoUrls(urls.filter((url) => url)) // Filter out any empty URLs
+        setVideos(videoData.filter((video) => video.publicUrl)) // Filter out any entries without URLs
       }
       setIsLoading(false)
     }
@@ -55,11 +61,6 @@ export default function ThumbnailsPage() {
 
     // Call fetch function immediately on component mount
     fetchUserAndVideos()
-
-    // Clean up auth listener when component unmounts
-    // return () => {
-    //   authListener?.unsubscribe()
-    // }
   }, [])
 
   return (
@@ -69,16 +70,11 @@ export default function ThumbnailsPage() {
         <p>Loading...</p> // Show loading state
       ) : (
         <div className="grid grid-cols-3 gap-4">
-          {videoUrls.map((url, index) => (
-            <div
-              key={index}
-              className="aspect-video w-full overflow-hidden rounded bg-gray-200"
-            >
-              <video
-                className="h-full w-full object-contain"
-                controls
-                src={url}
-                playsInline
+          {videos.map((video, index) => (
+            <div key={index} className="p-2">
+              <ThumbnailVideoDisplay
+                videoUrl={video.publicUrl}
+                filename={video.filename}
               />
             </div>
           ))}
