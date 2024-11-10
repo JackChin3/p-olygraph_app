@@ -7,9 +7,9 @@ import ThemeToggle from '@/components/ThemeToggle'
 import React, { useState } from 'react'
 import { FileUploadButton } from '../components/FileUploadButton'
 import { VideoRecorder } from '../components/VideoRecorder'
-import { VideoUploadAndRecorder } from '@/components/Videoplayer'
+import { VideoUploadAndRecorder } from '@/components/VideoUploadAndRecorder'
 import AuthButton from '@/components/AuthButton'
-import VideoPlayback from '@/components/VideoPlayback'
+// import VideoPlayback from '@/components/VideoPlayback'
 
 export default async function Index() {
   const cookieStore = cookies()
@@ -45,7 +45,7 @@ export default async function Index() {
         </div>
       </div>
 
-      <VideoPlayback />
+      {/* <VideoPlayback /> */}
 
       <footer className="w-full justify-center border-t border-t-foreground/10 p-8 text-center text-xs">
         <p className="mb-6">
