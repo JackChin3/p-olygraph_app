@@ -43,6 +43,17 @@ export const FileUploadButton = ({
         data: { publicUrl },
       } = supabase.storage.from('videos').getPublicUrl(filename)
 
+      const { error: dataError } = await supabase.from('video_info').insert([
+        {
+          title: filename,
+          truth_value: false,
+          user: user.id,
+          public_url: publicUrl,
+        },
+      ])
+
+      if (dataError) console.error('Error inserting video info:', dataError)
+
       // Only update URL if upload succeeded
       setVideoURL(publicUrl)
     } catch (error) {
