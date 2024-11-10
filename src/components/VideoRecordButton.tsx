@@ -1,9 +1,8 @@
 'use client'
 import { useRef, useEffect } from 'react'
 import { Button } from './ui/button'
-import { createBrowserClient } from '@/utils/supabase'
 
-export const VideoRecorder = ({
+export const VideoRecordButton = ({
   setVideoURL,
   videoRef,
   isRecording,
@@ -17,7 +16,6 @@ export const VideoRecorder = ({
   const mediaRecorder = useRef<MediaRecorder | null>(null)
   const recordedChunks = useRef<Blob[]>([])
   const streamRef = useRef<MediaStream | null>(null)
-  const supabase = createBrowserClient()
 
   useEffect(() => {
     return () => {
@@ -52,54 +50,10 @@ export const VideoRecorder = ({
         }
       }
 
-      mediaRecorder.current.onstop = async () => {
+      mediaRecorder.current.onstop = () => {
         const blob = new Blob(recordedChunks.current, { type: 'video/mp4' })
         const localUrl = URL.createObjectURL(blob)
-
-        // Set local URL immediately for preview
-        setVideoURL(localUrl)
-
-        try {
-          // Upload to Supabase
-          const {
-            data: { user },
-            error: userError,
-          } = await supabase.auth.getUser()
-          if (userError || !user) throw new Error('User not found')
-
-          const filename = `${user.id}_${Date.now()}.mp4`
-          const { error } = await supabase.storage
-            .from('videos')
-            .upload(filename, blob, {
-              contentType: 'video/mp4',
-              cacheControl: '3600',
-            })
-
-          if (error) throw error
-
-          const {
-            data: { publicUrl },
-          } = supabase.storage.from('videos').getPublicUrl(filename)
-
-          const { error: dataError } = await supabase
-            .from('video_info')
-            .insert([
-              {
-                title: filename,
-                truth_value: false,
-                user: user.id,
-                public_url: publicUrl,
-              },
-            ])
-
-          if (dataError) console.error('Error inserting video info:', dataError)
-
-          // Only update URL if upload succeeded
-          setVideoURL(publicUrl)
-        } catch (error) {
-          console.error('Error uploading to Supabase:', error)
-          // Keep using local URL if upload failed
-        }
+        setVideoURL(localUrl) // Set for preview only
       }
 
       mediaRecorder.current.start()

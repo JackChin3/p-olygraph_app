@@ -1,4 +1,4 @@
-// app/thumbnails/page.tsx
+// app/thumbnail/page.tsx
 'use client'
 import { useEffect, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
