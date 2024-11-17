@@ -1,6 +1,7 @@
-// app/reportcard/page.tsx
 'use client'
+import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { createBrowserClient } from '@/utils/supabase'
 import {
   Card,
   CardContent,
@@ -10,7 +11,31 @@ import {
 
 export default function ReportCard() {
   const searchParams = useSearchParams()
-  const videoURL = searchParams.get('videoURL') // Retrieve video URL from query parameter
+  const title = searchParams.get('title')
+  const [videoURL, setVideoURL] = useState<string | null>(null)
+
+  const supabase = createBrowserClient()
+
+  useEffect(() => {
+    const fetchVideoURL = async () => {
+      if (!title) return
+
+      const { data, error } = await supabase
+        .from('video_info')
+        .select('public_url')
+        .eq('title', title)
+        .single()
+
+      if (error) {
+        console.error('Error fetching video URL:', error)
+        return
+      }
+
+      setVideoURL(data?.public_url || null)
+    }
+
+    fetchVideoURL()
+  }, [title, supabase])
 
   return (
     <div className="flex w-full flex-1 flex-col">
