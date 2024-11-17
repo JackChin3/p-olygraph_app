@@ -67,7 +67,7 @@ export function VideoUploadAndRecorder() {
 
       console.log('Inserting video info with:', {
         title: filename,
-        truth_value: truthValue === 'true', // Map to boolean
+        truth_value: truthValue, // Map to boolean
         user: user.id,
         public_url: publicUrl,
       })
@@ -75,7 +75,7 @@ export function VideoUploadAndRecorder() {
       const { error: dataError } = await supabase.from('video_info').insert([
         {
           title: filename,
-          truth_value: truthValue === 'true', // Convert to boolean
+          truth_value: truthValue, // Convert to boolean
           user: user.id,
           public_url: publicUrl,
         },
