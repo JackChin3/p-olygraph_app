@@ -12,7 +12,7 @@ import AuthButton from '@/components/AuthButton'
 // import VideoPlayback from '@/components/VideoPlayback'
 
 export default async function Index() {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
 
   const canInitSupabaseClient = () => {
     try {

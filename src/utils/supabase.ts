@@ -12,7 +12,9 @@ export const createBrowserClient = () =>
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   )
 
-export const createServerClient = (cookieStore: ReturnType<typeof cookies>) =>
+export const createServerClient = (
+  cookieStore: Awaited<ReturnType<typeof cookies>>,
+) =>
   serverClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

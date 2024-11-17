@@ -3,17 +3,16 @@ import { headers, cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { createServerClient } from '@/utils/supabase'
 
-export default function Login({
-  searchParams,
-}: {
-  searchParams: { message: string }
+export default async function Login(props: {
+  searchParams: Promise<{ message: string }>
 }) {
+  const searchParams = await props.searchParams
   const signIn = async (formData: FormData) => {
     'use server'
 
     const email = formData.get('email') as string
     const password = formData.get('password') as string
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const supabase = createServerClient(cookieStore)
 
     const { error } = await supabase.auth.signInWithPassword({
@@ -31,10 +30,10 @@ export default function Login({
   const signUp = async (formData: FormData) => {
     'use server'
 
-    const origin = headers().get('origin')
+    const origin = (await headers()).get('origin')
     const email = formData.get('email') as string
     const password = formData.get('password') as string
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const supabase = createServerClient(cookieStore)
 
     const { error } = await supabase.auth.signUp({
