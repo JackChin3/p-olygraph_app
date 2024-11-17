@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation'
 export function VideoUploadAndRecorder() {
   const [videoURL, setVideoURL] = useState<string | null>(null)
   const [isRecording, setIsRecording] = useState(false)
-  const [truthValue, setTruthValue] = useState<'true' | 'lie' | null>(null)
+  const [truthValue, setTruthValue] = useState<'true' | 'lie'>('true') // Default to 'true'
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const supabase = createBrowserClient()
   const router = useRouter()
@@ -26,12 +26,19 @@ export function VideoUploadAndRecorder() {
       }
     }
   }
+
   const handleNavigate = () => {
     router.push(`/thumbnail`)
   }
 
   const handleSubmit = async () => {
-    if (!videoURL || !truthValue) return
+    if (!videoURL || !truthValue) {
+      console.error('Video URL or truth value is missing.')
+      alert(
+        'Please select a video and set the truth/lie toggle before submitting.',
+      )
+      return
+    }
 
     try {
       const response = await fetch(videoURL)
@@ -44,33 +51,41 @@ export function VideoUploadAndRecorder() {
       if (userError || !user) throw new Error('User not found')
 
       const filename = `${user.id}_${Date.now()}.mp4`
-      const { error } = await supabase.storage
+
+      const { error: uploadError } = await supabase.storage
         .from('videos')
         .upload(filename, blob, {
           contentType: 'video/mp4',
           cacheControl: '3600',
         })
 
-      if (error) throw error
+      if (uploadError) throw uploadError
 
       const {
         data: { publicUrl },
       } = supabase.storage.from('videos').getPublicUrl(filename)
 
+      console.log('Inserting video info with:', {
+        title: filename,
+        truth_value: truthValue === 'true', // Map to boolean
+        user: user.id,
+        public_url: publicUrl,
+      })
+
       const { error: dataError } = await supabase.from('video_info').insert([
         {
           title: filename,
-          truth_value: truthValue === 'true',
+          truth_value: truthValue === 'true', // Convert to boolean
           user: user.id,
           public_url: publicUrl,
         },
       ])
 
-      if (dataError) console.error('Error inserting video info:', dataError)
+      if (dataError) {
+        console.error('Error inserting video info:', dataError)
+      }
 
-      router.push(`/reportcard?filename=${encodeURIComponent(filename)}`)
-
-      setVideoURL(publicUrl) // Update URL to public URL after successful upload
+      router.push(`/reportcard?title=${encodeURIComponent(filename)}`)
     } catch (error) {
       console.error('Error uploading video:', error)
     }
@@ -129,16 +144,14 @@ export function VideoUploadAndRecorder() {
             />
           </div>
 
-          {videoURL && (
-            <div className="mt-4 flex justify-center">
-              <button
-                onClick={handleSubmit}
-                className="rounded-md bg-blue-600 px-6 py-2 text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              >
-                Submit Video
-              </button>
-            </div>
-          )}
+          <div className="mt-4 flex justify-center">
+            <button
+              onClick={handleSubmit}
+              className="rounded-md bg-blue-600 px-6 py-2 text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              Submit Video
+            </button>
+          </div>
         </>
       )}
       <button

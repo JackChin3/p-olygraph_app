@@ -9,8 +9,10 @@ const ThumbnailVideoDisplay = ({
   filename: string
 }) => {
   const router = useRouter()
+
+  // Navigate to the report card page with the filename
   const handleNavigate = () => {
-    router.push(`/reportcard?filename=${encodeURIComponent(filename)}`)
+    router.push(`/reportcard?title=${encodeURIComponent(filename)}`)
   }
 
   return (
