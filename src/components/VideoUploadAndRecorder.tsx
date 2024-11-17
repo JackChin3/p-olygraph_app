@@ -13,6 +13,9 @@ export function VideoUploadAndRecorder() {
   const [videoURL, setVideoURL] = useState<string | null>(null)
   const [isRecording, setIsRecording] = useState(false)
   const [truthValue, setTruthValue] = useState<'true' | 'lie'>('true') // Default to 'true'
+  const [publicValue, setPublicValue] = useState<'Public' | 'Private'>(
+    'Private',
+  )
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const supabase = createBrowserClient()
   const router = useRouter()
@@ -70,6 +73,7 @@ export function VideoUploadAndRecorder() {
         truth_value: truthValue, // Map to boolean
         user: user.id,
         public_url: publicUrl,
+        public: publicValue === 'Public',
       })
 
       const { error: dataError } = await supabase.from('video_info').insert([
@@ -78,6 +82,7 @@ export function VideoUploadAndRecorder() {
           truth_value: truthValue, // Convert to boolean
           user: user.id,
           public_url: publicUrl,
+          public: publicValue === 'Public',
         },
       ])
 
@@ -93,6 +98,10 @@ export function VideoUploadAndRecorder() {
 
   const handleToggle = () => {
     setTruthValue((prev) => (prev === 'true' ? 'lie' : 'true'))
+  }
+
+  const handlePublicToggle = () => {
+    setPublicValue((prev) => (prev === 'Public' ? 'Private' : 'Public'))
   }
 
   return (
@@ -131,16 +140,39 @@ export function VideoUploadAndRecorder() {
               onChange={handleToggle}
               className="toggle-switch rounded border border-gray-400 bg-gray-200 align-middle"
               checkedIcon={
-                <p className="ml-2 align-middle text-sm font-bold text-black">
+                <p className="align-left ml-2 text-sm font-bold text-black">
                   Truth
                 </p>
               }
               uncheckedIcon={
-                <p className="align-middle text-sm font-bold text-white">Lie</p>
+                <p className="align-right text-sm font-bold text-white">Lie</p>
               }
               onColor="#FFFFFF"
               offColor="#000000"
-              width={80}
+              width={85}
+              height={25}
+            />
+          </div>
+
+          <div className="mt-4 flex items-center justify-center space-x-4 align-middle">
+            <ReactSwitch
+              checked={publicValue === 'Public'}
+              onChange={handlePublicToggle}
+              className="toggle-switch rounded border border-gray-400 bg-gray-200 align-middle"
+              checkedIcon={
+                <div className="flex h-full items-center pl-1">
+                  <span className="text-sm font-bold text-black">Public</span>
+                </div>
+              }
+              uncheckedIcon={
+                <div className="flex h-full items-center justify-end pr-1">
+                  <span className="text-sm font-bold text-white">Private</span>
+                </div>
+              }
+              onColor="#FFFFFF"
+              offColor="#000000"
+              width={85}
+              height={25}
             />
           </div>
 
