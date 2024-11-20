@@ -33,8 +33,9 @@ export function VideoUploadAndRecorder() {
   const handleNavigate = () => {
     router.push(`/thumbnail`)
   }
-
   const handleSubmit = async () => {
+    console.log('Starting submission with:', { videoURL, truthValue })
+
     if (!videoURL || !truthValue) {
       console.error('Video URL or truth value is missing.')
       alert(
@@ -44,17 +45,58 @@ export function VideoUploadAndRecorder() {
     }
 
     try {
-      const response = await fetch(videoURL)
-      const blob = await response.blob()
-
+      // 1. Check User
+      console.log('Getting user...')
       const {
         data: { user },
         error: userError,
       } = await supabase.auth.getUser()
-      if (userError || !user) throw new Error('User not found')
+      if (userError || !user) {
+        console.error('User error:', userError)
+        throw new Error('User not found')
+      }
+      console.log('User found:', user.id)
 
       const filename = `${user.id}_${Date.now()}.mp4`
+      console.log('Generated filename:', filename)
 
+      // 2. Fetch Video
+      console.log('Fetching video from URL:', videoURL)
+      const response = await fetch(videoURL)
+      console.log('Video fetch response status:', response.status)
+      const blob = await response.blob()
+      console.log('Video blob size:', blob.size, 'type:', blob.type)
+
+      // 3. Prepare FormData
+      const formData = new FormData()
+      formData.append('file', blob, 'video.mp4')
+      formData.append('video_id', filename)
+      console.log('FormData prepared with video_id:', filename)
+
+      // 4. ML Processing
+      console.log('Sending to ML API...')
+      const apiResponse = await fetch(
+        'http://127.0.0.1:5000/api/process-video',
+        {
+          method: 'POST',
+          body: formData,
+          headers: {
+            Accept: 'application/json',
+          },
+        },
+      )
+      console.log('ML API response status:', apiResponse.status)
+
+      const mlData = await apiResponse.json()
+      console.log('ML API response data:', mlData)
+
+      if (!mlData.success || !mlData['ml results']) {
+        console.error('ML processing failed:', mlData)
+        throw new Error('Invalid ML processing results')
+      }
+
+      // 5. Upload to Supabase Storage
+      console.log('Uploading to Supabase storage...')
       const { error: uploadError } = await supabase.storage
         .from('videos')
         .upload(filename, blob, {
@@ -62,37 +104,48 @@ export function VideoUploadAndRecorder() {
           cacheControl: '3600',
         })
 
-      if (uploadError) throw uploadError
+      if (uploadError) {
+        console.error('Upload error:', uploadError)
+        throw uploadError
+      }
+      console.log('Upload successful')
 
+      // 6. Get Public URL
       const {
         data: { publicUrl },
       } = supabase.storage.from('videos').getPublicUrl(filename)
+      console.log('Generated public URL:', publicUrl)
 
-      console.log('Inserting video info with:', {
+      // 7. Prepare Database Entry
+      const videoInfo = {
         title: filename,
-        truth_value: truthValue, // Map to boolean
+        truth_value: truthValue,
         user: user.id,
         public_url: publicUrl,
         public: publicValue === 'Public',
-      })
+        model_results: mlData['ml results'],
+      }
+      console.log('Preparing to insert video info:', videoInfo)
 
-      const { error: dataError } = await supabase.from('video_info').insert([
-        {
-          title: filename,
-          truth_value: truthValue, // Convert to boolean
-          user: user.id,
-          public_url: publicUrl,
-          public: publicValue === 'Public',
-        },
-      ])
+      // 8. Insert into Database
+      const { error: dataError } = await supabase
+        .from('video_info')
+        .insert([videoInfo])
 
       if (dataError) {
-        console.error('Error inserting video info:', dataError)
+        console.error('Database insertion error:', dataError)
+        // Cleanup uploaded file if database insert fails
+        await supabase.storage.from('videos').remove([filename])
+        throw new Error(`Failed to save video info: ${dataError.message}`)
       }
+      console.log('Database insertion successful')
 
+      // 9. Navigation
+      console.log('Navigating to reportcard...')
       router.push(`/reportcard?title=${encodeURIComponent(filename)}`)
     } catch (error) {
-      console.error('Error uploading video:', error)
+      console.error('Error in submission process:', error)
+      alert(`Error processing video`)
     }
   }
 
@@ -106,10 +159,10 @@ export function VideoUploadAndRecorder() {
 
   return (
     <div>
-      <h1 className="mb-4 text-2xl font-bold">
+      <h1 className="mb-4 text-center text-2xl font-bold">
         Upload or Record a Video to Get Started!
       </h1>
-      <div className="mb-4 flex space-x-4">
+      <div className="mb-4 flex items-center justify-center space-x-4">
         <FileUploadButton setVideoURL={handleVideoSource} />
         <VideoRecordButton
           setVideoURL={handleVideoSource}
@@ -186,12 +239,12 @@ export function VideoUploadAndRecorder() {
           </div>
         </>
       )}
-      <button
+      {/* <button
         onClick={handleNavigate}
         className="rounded-md bg-green-600 px-6 py-2 text-white transition-colors hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
       >
         View All Videos
-      </button>
+      </button> */}
     </div>
   )
 }

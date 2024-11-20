@@ -18,6 +18,7 @@ export default function ResultCard() {
   const [message, setMessage] = useState<string>('')
   const [numLie, setNumLie] = useState<number | null>(null)
   const [numTrue, setNumTrue] = useState<number | null>(null)
+  const [modelResult, setModelResult] = useState<string | null>(null)
 
   const supabase = createBrowserClient()
 
@@ -28,7 +29,7 @@ export default function ResultCard() {
       // Fetch the video URL and truth_value from the database
       const { data, error } = await supabase
         .from('video_info')
-        .select('public_url, truth_value, num_true, num_lie')
+        .select('public_url, truth_value, num_true, num_lie, model_results')
         .eq('title', title)
         .single()
 
@@ -41,6 +42,7 @@ export default function ResultCard() {
       setTruthValue(data?.truth_value || null)
       setNumLie(data?.num_lie || null)
       setNumTrue(data?.num_true || null)
+      setModelResult(data?.model_results || null)
 
       // Update the num_true or num_lie based on classification
       if (classification && data) {
@@ -73,6 +75,7 @@ export default function ResultCard() {
     if (classification && truthValue) {
       if (classification === 'true' && truthValue === 'true') {
         setMessage('You correctly classified the video as True!')
+        // UPDATE THE USER's NUMBERS HERE
       } else if (classification === 'true' && truthValue === 'lie') {
         setMessage('You were deceived!')
       } else if (classification === 'lie' && truthValue === 'true') {
@@ -125,9 +128,7 @@ export default function ResultCard() {
             </CardHeader>
             <CardContent>
               <div className="rounded-lg border border-gray-200 p-4">
-                <h3 className="mb-2 text-lg font-medium">
-                  Put Video Performance Results Here
-                </h3>
+                <h3 className="mb-2 text-lg font-medium">{modelResult}</h3>
               </div>
             </CardContent>
           </Card>

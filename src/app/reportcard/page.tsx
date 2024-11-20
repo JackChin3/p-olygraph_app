@@ -13,29 +13,56 @@ export default function ReportCard() {
   const searchParams = useSearchParams()
   const title = searchParams.get('title')
   const [videoURL, setVideoURL] = useState<string | null>(null)
+  const [truthValue, setTruthValue] = useState<'true' | 'lie' | null>(null)
+  const [message, setMessage] = useState<string>('')
+  const [numLie, setNumLie] = useState<number>(0)
+  const [numTrue, setNumTrue] = useState<number>(0)
+  const [modelResult, setModelResult] = useState<string | null>(null)
 
   const supabase = createBrowserClient()
 
   useEffect(() => {
-    const fetchVideoURL = async () => {
+    const fetchVideoData = async () => {
       if (!title) return
 
+      // Fetch the video URL and truth_value from the database
       const { data, error } = await supabase
         .from('video_info')
-        .select('public_url')
+        .select('public_url, truth_value, num_true, num_lie, model_results')
         .eq('title', title)
         .single()
 
       if (error) {
-        console.error('Error fetching video URL:', error)
+        console.error('Error fetching video data:', error)
         return
       }
 
       setVideoURL(data?.public_url || null)
+      setTruthValue(data?.truth_value || null)
+      setNumLie(data?.num_lie || null)
+      setNumTrue(data?.num_true || null)
+      setModelResult(data?.model_results || null)
     }
 
-    fetchVideoURL()
-  }, [title, supabase])
+    fetchVideoData()
+  }, [title, supabase, numLie, numTrue])
+
+  useEffect(() => {
+    if (modelResult && truthValue) {
+      if (modelResult === truthValue) {
+        setMessage('You did not fool the AI!')
+        // UPDATE THE USER's NUMBERS HERE
+      } else {
+        setMessage('You fooled the AI!')
+      }
+    }
+  }, [truthValue, modelResult])
+
+  const totalVotes = numTrue + numLie
+  const truePercentage = totalVotes ? (numTrue / totalVotes) * 100 : 0
+  const liePercentage = totalVotes ? (numLie / totalVotes) * 100 : 0
+  const deceivedPercentage =
+    truthValue === 'true' ? liePercentage : truePercentage
 
   return (
     <div className="flex w-full flex-1 flex-col">
@@ -75,13 +102,42 @@ export default function ReportCard() {
         <div className="flex w-1/2 flex-col gap-4">
           <Card>
             <CardHeader>
-              <CardTitle>Your Video Performance</CardTitle>
+              <CardTitle>{message}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="rounded-lg border border-gray-200 p-4">
                 <h3 className="mb-2 text-lg font-medium">
-                  Put Video Performance Results Here
+                  You submitted a <strong>{truthValue}</strong> video, and the
+                  AI classified it as a <strong>{modelResult}</strong>
                 </h3>
+                {totalVotes > 0 && (
+                  <>
+                    <p className="mb-2 text-center font-medium">
+                      User Classifications:
+                    </p>
+                    <div className="relative h-4 w-full rounded-lg border border-gray-200 bg-gray-300">
+                      <div
+                        className="absolute flex h-full items-center justify-center bg-white"
+                        style={{ width: `${truePercentage}%` }}
+                      >
+                        <span className="text-xs text-black">{`True (${numTrue})`}</span>
+                      </div>
+                      <div
+                        className="absolute flex h-full items-center justify-center bg-black"
+                        style={{
+                          width: `${liePercentage}%`,
+                          left: `${truePercentage}%`,
+                        }}
+                      >
+                        <span className="text-xs text-white">{`Lie (${numLie})`}</span>
+                      </div>
+                    </div>
+                    <p className="mt-2 text-center">
+                      You deceived{' '}
+                      <strong>{deceivedPercentage.toFixed(2)}%</strong> of users
+                    </p>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
