@@ -14,19 +14,19 @@ export default function Sidebar() {
       {/* Sidebar toggle button */}
       <div
         onClick={toggleSidebar}
-        className="fixed left-4 top-4 z-50 flex h-10 w-10 cursor-pointer items-center justify-center rounded bg-blue-500 text-white"
+        className="fixed left-4 top-4 z-50 flex h-10 w-10 cursor-pointer items-center justify-center rounded bg-white text-black shadow-md"
       >
         {/* Hamburger Icon */}
         <div className="space-y-1">
-          <div className="h-1 w-6 bg-white"></div>
-          <div className="h-1 w-6 bg-white"></div>
-          <div className="h-1 w-6 bg-white"></div>
+          <div className="h-1 w-6 bg-black"></div>
+          <div className="h-1 w-6 bg-black"></div>
+          <div className="h-1 w-6 bg-black"></div>
         </div>
       </div>
 
       {/* Sidebar */}
       <div
-        className={`fixed left-0 top-0 h-full w-64 transform bg-gray-800 text-white shadow-lg ${
+        className={`fixed left-0 top-0 h-full w-64 transform bg-black text-white shadow-lg ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         } z-40 transition-transform duration-300`}
       >
@@ -42,7 +42,7 @@ export default function Sidebar() {
                   toggleSidebar()
                   router.push('/')
                 }}
-                className="z-50 w-full rounded bg-blue-500 p-3 text-left hover:bg-blue-600"
+                className="z-50 w-full rounded bg-white p-3 text-left text-black hover:bg-gray-200"
               >
                 Home
               </button>
@@ -54,7 +54,7 @@ export default function Sidebar() {
                   toggleSidebar()
                   router.push('/thumbnail')
                 }}
-                className="z-50 w-full rounded bg-blue-500 p-3 text-left hover:bg-blue-600"
+                className="z-50 w-full rounded bg-white p-3 text-left text-black hover:bg-gray-200"
               >
                 My Videos
               </button>
@@ -65,7 +65,7 @@ export default function Sidebar() {
                   toggleSidebar()
                   router.push('/explore')
                 }}
-                className="z-50 w-full rounded bg-blue-500 p-3 text-left hover:bg-blue-600"
+                className="z-50 w-full rounded bg-white p-3 text-left text-black hover:bg-gray-200"
               >
                 Explore Videos
               </button>

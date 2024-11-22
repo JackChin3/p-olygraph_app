@@ -76,9 +76,11 @@ const ExploreVideoDisplay = ({
           />
         </div>
       </div>
+
+      {/* Submit Button */}
       <button
         onClick={handleNavigate}
-        className="h-15 w-60 rounded-md bg-green-600 px-6 py-2 text-white transition-colors hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+        className="h-15 w-60 rounded-md bg-black px-6 py-2 text-white transition-colors hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
       >
         Submit Classification and View Results
       </button>

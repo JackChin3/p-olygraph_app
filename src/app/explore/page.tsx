@@ -54,7 +54,9 @@ const Explore = ({}: {}) => {
   if (loading) return <div>Loading...</div>
 
   return (
-    <div>
+    <div className="pt-16">
+      {' '}
+      {/* Added padding to account for the header */}
       <h1 className="mb-4 text-2xl font-bold">Explore Videos</h1>
       <div className="grid flex-col items-center justify-center gap-4">
         {videos.map((video, index) => {
