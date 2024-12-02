@@ -1,66 +1,34 @@
-import ConnectSupabaseSteps from '@/components/ConnectSupabaseSteps'
-import SignUpUserSteps from '@/components/SignUpUserSteps'
-import Header from '@/components/Header'
-import { cookies } from 'next/headers'
-import { createServerClient } from '@/utils/supabase'
-import ThemeToggle from '@/components/ThemeToggle'
-import React, { useState } from 'react'
-import { FileUploadButton } from '../components/FileUploadButton'
-import { VideoRecordButton } from '../components/VideoRecordButton'
-import { VideoUploadAndRecorder } from '@/components/VideoUploadAndRecorder'
-import AuthButton from '@/components/AuthButton'
-// import VideoPlayback from '@/components/VideoPlayback'
+'use client'
 
-export default async function Index() {
-  const cookieStore = await cookies()
+import { useRouter } from 'next/navigation'
 
-  const canInitSupabaseClient = () => {
-    try {
-      createServerClient(cookieStore)
-      return true
-    } catch (e) {
-      return false
-    }
-  }
-
-  const isSupabaseConnected = canInitSupabaseClient()
+export default function AboutUsPage() {
+  const router = useRouter()
 
   return (
-    <div className="flex w-full flex-1 flex-col items-center gap-20">
-      {/* Minimalistic Header */}
-      <header className="flex w-full justify-center border-b border-b-foreground/10 py-4">
-        <h1 className="text-2xl font-light tracking-wide">polygraph</h1>
-      </header>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-black p-4">
+      <div className="max-w-2xl text-center">
+        {/* Updated Header */}
+        <h1 className="mb-4 text-4xl font-bold text-white">
+          Welcome to Polygraph
+        </h1>
 
-      <nav className="flex h-16 w-full justify-center border-b border-b-foreground/10">
-        <div className="flex w-full max-w-4xl items-center justify-between p-3 text-sm">
-          {isSupabaseConnected && <AuthButton />}
-        </div>
-      </nav>
-
-      {/* Centered Video Upload and Recorder Section */}
-      <div className="flex h-full w-full flex-grow items-center justify-center">
-        <div className="container mx-auto flex items-center justify-center p-4">
-          <VideoUploadAndRecorder />
-        </div>
-      </div>
-
-      {/* <VideoPlayback /> */}
-
-      <footer className="w-full justify-center border-t border-t-foreground/10 p-8 text-center text-xs">
-        <p className="mb-6">
-          Powered by{' '}
-          <a
-            href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-            target="_blank"
-            className="font-bold hover:underline"
-            rel="noreferrer"
-          >
-            Supabase
-          </a>
+        {/* Updated Description */}
+        <p className="mb-8 text-lg text-gray-300">
+          Polygraph is a cutting-edge platform leveraging AI technology to
+          distinguish truth from deception. Our system analyzes videos to detect
+          authenticity and uncover hidden patterns. Are you ready to challenge
+          AI?
         </p>
-        <ThemeToggle />
-      </footer>
+
+        {/* Updated Button */}
+        <button
+          onClick={() => router.push('/record-video')}
+          className="rounded-md bg-white px-6 py-3 text-lg text-black hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+        >
+          Let&apos;s Get Started
+        </button>
+      </div>
     </div>
   )
 }
